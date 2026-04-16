@@ -1,0 +1,1564 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartBus — College Bus Real-Time Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+--primary: #0a0f2c;
+--primary-light: #131a42;
+--primary-mid: #1a2355;
+--accent: #4f8cff;
+--cyan: #00e5ff;
+--text: #f0f4ff;
+--text-dim: #8892b0;
+--text-dark: #0a0f2c;
+--card-bg: rgba(255, 255, 255, 0.05);
+--card-border: rgba(255, 255, 255, 0.1);
+--glass-bg: rgba(10, 15, 44, 0.7);
+--glass-border: rgba(79, 140, 255, 0.2);
+--success: #00e676;
+--warning: #ffab00;
+--danger: #ff5252;
+--shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+--shadow-hover: 0 16px 48px rgba(79, 140, 255, 0.2);
+--radius-sm: 8px;
+--radius-md: 12px;
+--radius-lg: 20px;
+--radius-full: 50%;
+--transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+--font-body: 'Inter', sans-serif;
+--font-heading: 'Orbitron', sans-serif;
+}
+
+[data-theme="light"] {
+--primary: #f0f4ff;
+--primary-light: #e4eafc;
+--primary-mid: #d0d9f0;
+--text: #0a0f2c;
+--text-dim: #4a5568;
+--text-dark: #0a0f2c;
+--card-bg: rgba(0, 0, 0, 0.03);
+--card-border: rgba(0, 0, 0, 0.1);
+--glass-bg: rgba(240, 244, 255, 0.85);
+--glass-border: rgba(79, 140, 255, 0.3);
+--shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+--shadow-hover: 0 16px 48px rgba(79, 140, 255, 0.15);
+}
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+::selection{background:var(--accent);color:#fff}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--primary)}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--cyan)}
+
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--font-body);background:var(--primary);color:var(--text);overflow-x:hidden;line-height:1.6}
+
+.skip-link{position:absolute;top:-100%;left:16px;padding:8px 16px;background:var(--accent);color:#fff;border-radius:var(--radius-sm);z-index:10001;transition:var(--transition)}
+.skip-link:focus{top:16px}
+
+/* PRELOADER */
+#preloader{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--primary);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10000;transition:opacity 0.6s ease,visibility 0.6s ease}
+#preloader.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.preloader-bus{font-size:64px;animation:busFloat 1.5s ease-in-out infinite}
+.preloader-text{font-family:var(--font-heading);font-size:28px;color:var(--accent);margin-top:16px;overflow:hidden;white-space:nowrap;border-right:3px solid var(--cyan);animation:typewriter 2s steps(8) forwards,blink 0.7s step-end infinite}
+.preloader-bar{width:200px;height:4px;background:var(--primary-light);border-radius:4px;margin-top:24px;overflow:hidden}
+.preloader-bar-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--cyan));border-radius:4px;animation:loadBar 2.2s ease forwards}
+@keyframes busFloat{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-15px) rotate(2deg)}}
+@keyframes typewriter{from{width:0}to{width:8ch}}
+@keyframes blink{50%{border-color:transparent}}
+@keyframes loadBar{0%{width:0}100%{width:100%}}
+
+/* NAVBAR */
+#navbar{position:fixed;top:0;left:0;width:100%;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;z-index:1000;transition:var(--transition);backdrop-filter:blur(0px);background:transparent}
+#navbar.scrolled{backdrop-filter:blur(20px);background:var(--glass-bg);border-bottom:1px solid var(--glass-border);padding:12px 40px;box-shadow:var(--shadow)}
+.nav-logo{font-family:var(--font-heading);font-size:22px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none;display:flex;align-items:center;gap:8px}
+.nav-logo span{font-size:26px;-webkit-text-fill-color:initial}
+.nav-links{display:flex;align-items:center;gap:32px;list-style:none}
+.nav-links a{color:var(--text-dim);text-decoration:none;font-size:14px;font-weight:500;position:relative;transition:var(--transition);padding:4px 0}
+.nav-links a::after{content:'';position:absolute;bottom:-2px;left:0;width:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--cyan));transition:var(--transition);border-radius:2px}
+.nav-links a:hover,
+.nav-links a.active{color:var(--text)}
+.nav-links a:hover::after,
+.nav-links a.active::after{width:100%}
+.nav-right{display:flex;align-items:center;gap:16px}
+.nav-clock{font-family:var(--font-heading);font-size:12px;color:var(--cyan);letter-spacing:1px}
+.theme-toggle{background:none;border:2px solid var(--glass-border);border-radius:var(--radius-full);width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:var(--transition);color:var(--text)}
+.theme-toggle:hover{border-color:var(--accent);transform:rotate(180deg)}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px;z-index:1001}
+.hamburger span{width:24px;height:2px;background:var(--text);transition:var(--transition);border-radius:2px}
+.hamburger.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.hamburger.active span:nth-child(2){opacity:0}
+.hamburger.active span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+.mobile-menu{position:fixed;top:0;right:-100%;width:280px;height:100vh;background:var(--primary-light);backdrop-filter:blur(20px);display:flex;flex-direction:column;padding:80px 32px 32px;gap:24px;transition:var(--transition);z-index:999;border-left:1px solid var(--glass-border)}
+.mobile-menu.active{right:0}
+.mobile-menu a{color:var(--text);text-decoration:none;font-size:18px;font-weight:500;padding:12px 0;border-bottom:1px solid var(--card-border);transition:var(--transition)}
+.mobile-menu a:hover{color:var(--accent);padding-left:8px}
+
+/* HERO */
+#hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px;overflow:hidden}
+.hero-bg{position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#0a0f2c,#131a52,#0a0f2c,#0d1a3a);background-size:400% 400%;animation:gradientShift 15s ease infinite;z-index:0}
+@keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+#particleCanvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1}
+.floating-bus{position:absolute;font-size:40px;opacity:0.1;animation:floatBus 20s linear infinite;z-index:1}
+.floating-bus:nth-child(2){top:20%;font-size:30px;animation-duration:25s;animation-delay:5s}
+.floating-bus:nth-child(3){top:60%;font-size:50px;animation-duration:30s;animation-delay:10s}
+.floating-bus:nth-child(4){top:80%;font-size:25px;animation-duration:18s;animation-delay:3s}
+@keyframes floatBus{0%{transform:translateX(-100px) rotate(0deg)}100%{transform:translateX(calc(100vw + 100px)) rotate(10deg)}}
+.hero-content{position:relative;z-index:2;max-width:800px}
+.hero-badge{display:inline-block;padding:8px 20px;background:rgba(79,140,255,0.15);border:1px solid rgba(79,140,255,0.3);border-radius:50px;font-size:13px;font-weight:500;color:var(--accent);margin-bottom:24px;animation:fadeInDown 1s ease 0.5s both}
+.hero-title{font-family:var(--font-heading);font-size:clamp(32px,5vw,64px);font-weight:800;line-height:1.1;margin-bottom:20px;overflow:hidden}
+.hero-title .word{display:inline-block;opacity:0;transform:translateY(40px);animation:wordReveal 0.6s ease forwards}
+.hero-title .word:nth-child(1){animation-delay:0.8s}
+.hero-title .word:nth-child(2){animation-delay:0.95s}
+.hero-title .word:nth-child(3){animation-delay:1.1s}
+.hero-title .word:nth-child(4){animation-delay:1.25s}
+.hero-title .word:nth-child(5){animation-delay:1.4s}
+.hero-title .word:nth-child(6){animation-delay:1.55s}
+.hero-title .highlight{background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+@keyframes wordReveal{to{opacity:1;transform:translateY(0)}}
+.hero-sub{font-size:clamp(15px,2vw,18px);color:var(--text-dim);max-width:600px;margin:0 auto 40px;opacity:0;animation:fadeInUp 0.8s ease 1.8s both;line-height:1.7}
+.hero-buttons{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;opacity:0;animation:fadeInUp 0.8s ease 2s both}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:var(--radius-sm);font-size:15px;font-weight:600;text-decoration:none;transition:var(--transition);cursor:pointer;border:none;position:relative;overflow:hidden;font-family:var(--font-body)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#6c63ff);color:#fff;box-shadow:0 4px 20px rgba(79,140,255,0.4)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(79,140,255,0.6)}
+.btn-secondary{background:transparent;color:var(--text);border:2px solid var(--glass-border)}
+.btn-secondary:hover{border-color:var(--accent);background:rgba(79,140,255,0.1);transform:translateY(-2px)}
+.btn .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,0.3);transform:scale(0);animation:ripple 0.6s linear}
+@keyframes ripple{to{transform:scale(4);opacity:0}}
+.scroll-indicator{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);z-index:2;animation:bounce 2s ease infinite;opacity:0;animation:fadeInUp 1s ease 2.5s both,bounce 2s ease 3.5s infinite;cursor:pointer}
+.scroll-indicator span{display:block;width:24px;height:24px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);margin:-8px auto 0}
+@keyframes bounce{0%,20%,50%,80%,100%{transform:translateX(-50%) translateY(0)}40%{transform:translateX(-50%) translateY(-12px)}60%{transform:translateX(-50%) translateY(-6px)}}
+
+/* STATS BAR */
+.stats-bar{display:flex;justify-content:center;gap:48px;flex-wrap:wrap;margin-top:60px;opacity:0;animation:fadeInUp 0.8s ease 2.3s both}
+.stat-item{text-align:center}
+.stat-number{font-family:var(--font-heading);font-size:clamp(24px,3vw,36px);font-weight:700;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{font-size:13px;color:var(--text-dim);margin-top:4px}
+
+/* SECTION STYLES */
+.section{padding:100px 24px;max-width:1200px;margin:0 auto}
+.section-header{text-align:center;margin-bottom:60px}
+.section-title{font-family:var(--font-heading);font-size:clamp(24px,3.5vw,40px);font-weight:700;margin-bottom:16px;position:relative;display:inline-block}
+.section-title::after{content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:60px;height:3px;background:linear-gradient(90deg,var(--accent),var(--cyan));border-radius:3px;animation:glowLine 2s ease infinite}
+@keyframes glowLine{0%,100%{box-shadow:0 0 8px var(--accent)}50%{box-shadow:0 0 20px var(--cyan)}}
+.section-subtitle{color:var(--text-dim);font-size:16px;max-width:600px;margin:16px auto 0}
+
+/* LIVE MAP */
+#livemap{background:var(--primary-light);padding:100px 0}
+.map-container{max-width:1200px;margin:0 auto;padding:0 24px}
+.map-wrapper{display:grid;grid-template-columns:1fr 340px;gap:24px;margin-top:40px}
+.map-frame{background:var(--primary);border-radius:var(--radius-md);overflow:hidden;position:relative;height:500px;border:1px solid var(--card-border)}
+.map-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(79,140,255,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(79,140,255,0.05) 1px,transparent 1px);background-size:40px 40px}
+.map-road{position:absolute;background:rgba(79,140,255,0.08);border-radius:4px}
+.map-road.h1{top:30%;left:0;right:0;height:3px}
+.map-road.h2{top:60%;left:0;right:0;height:3px}
+.map-road.v1{left:25%;top:0;bottom:0;width:3px}
+.map-road.v2{left:55%;top:0;bottom:0;width:3px}
+.map-road.v3{left:80%;top:0;bottom:0;width:3px}
+.bus-marker{position:absolute;width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--cyan));border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;z-index:10;transition:var(--transition);animation:pulse 2s ease infinite}
+.bus-marker::after{content:'';position:absolute;inset:-4px;border-radius:var(--radius-full);border:2px solid var(--accent);opacity:0.5;animation:markerPing 2s ease infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes markerPing{0%{transform:scale(1);opacity:0.5}100%{transform:scale(1.6);opacity:0}}
+.bus-marker:hover{transform:scale(1.2)!important;z-index:20}
+.marker-tooltip{position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);background:var(--primary-light);border:1px solid var(--glass-border);border-radius:var(--radius-sm);padding:12px 16px;min-width:180px;opacity:0;visibility:hidden;transition:var(--transition);pointer-events:none;font-size:13px;backdrop-filter:blur(10px)}
+.marker-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--glass-border)}
+.bus-marker:hover .marker-tooltip{opacity:1;visibility:visible}
+.tooltip-row{display:flex;justify-content:space-between;gap:16px;padding:3px 0;color:var(--text-dim)}
+.tooltip-row strong{color:var(--text)}
+.map-label{position:absolute;font-size:11px;color:var(--text-dim);font-weight:500;opacity:0.6}
+.side-panel{background:var(--glass-bg);backdrop-filter:blur(20px);border:1px solid var(--glass-border);border-radius:var(--radius-md);padding:24px;overflow-y:auto;max-height:500px}
+.side-panel h3{font-family:var(--font-heading);font-size:16px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.side-panel h3 .dot{width:8px;height:8px;background:var(--success);border-radius:50%;animation:blink-dot 1.5s ease infinite}
+@keyframes blink-dot{0%,100%{opacity:1}50%{opacity:0.3}}
+.active-bus-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--radius-sm);transition:var(--transition);cursor:pointer;border-bottom:1px solid var(--card-border)}
+.active-bus-item:last-child{border-bottom:none}
+.active-bus-item:hover{background:rgba(79,140,255,0.1)}
+.bus-badge{width:40px;height:40px;border-radius:var(--radius-sm);background:linear-gradient(135deg,var(--accent),#6c63ff);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex-shrink:0}
+.bus-info{flex:1;min-width:0}
+.bus-info .name{font-weight:600;font-size:14px}
+.bus-info .location{font-size:12px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.status-dot.online{background:var(--success);box-shadow:0 0 8px var(--success)}
+.status-dot.delayed{background:var(--warning);box-shadow:0 0 8px var(--warning)}
+.map-filter{margin-top:16px}
+.map-filter select{width:100%;padding:10px 12px;background:var(--primary);border:1px solid var(--card-border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;outline:none;cursor:pointer;transition:var(--transition);font-family:var(--font-body)}
+.map-filter select:focus{border-color:var(--accent)}
+.refresh-btn{width:100%;margin-top:12px;padding:10px;background:linear-gradient(135deg,var(--accent),#6c63ff);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:600;font-size:14px;transition:var(--transition);display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--font-body)}
+.refresh-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(79,140,255,0.4)}
+.refresh-btn.spinning .refresh-icon{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* SEARCH */
+.search-section{max-width:800px;margin:0 auto;padding:0 24px;position:relative;z-index:10;margin-top:-40px}
+.search-card{background:var(--glass-bg);backdrop-filter:blur(20px);border:1px solid var(--glass-border);border-radius:var(--radius-md);padding:24px;box-shadow:var(--shadow)}
+.search-input-wrap{position:relative;margin-bottom:16px}
+.search-input-wrap .icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--text-dim)}
+.search-input{width:100%;padding:14px 16px 14px 48px;background:var(--primary);border:2px solid var(--card-border);border-radius:var(--radius-sm);color:var(--text);font-size:15px;outline:none;transition:var(--transition);font-family:var(--font-body)}
+.search-input:focus{border-color:var(--accent);box-shadow:0 0 16px rgba(79,140,255,0.2)}
+.search-input::placeholder{color:var(--text-dim)}
+.filter-chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:8px 18px;border-radius:50px;border:1px solid var(--card-border);background:transparent;color:var(--text-dim);font-size:13px;cursor:pointer;transition:var(--transition);font-family:var(--font-body);font-weight:500}
+.chip:hover,.chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ROUTE CARDS */
+.routes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:24px;margin-top:40px}
+.route-card{background:var(--card-bg);backdrop-filter:blur(10px);border:1px solid var(--card-border);border-radius:var(--radius-md);padding:24px;transition:var(--transition);cursor:pointer;position:relative;overflow:hidden;border-left:4px solid var(--accent);opacity:0;transform:translateY(30px)}
+.route-card.visible{opacity:1;transform:translateY(0)}
+.route-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-hover);border-color:var(--accent)}
+.route-card.status-ontime{border-left-color:var(--success)}
+.route-card.status-delayed{border-left-color:var(--warning)}
+.route-card.status-cancelled{border-left-color:var(--danger)}
+.route-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.route-bus-number{font-family:var(--font-heading);font-size:18px;font-weight:700;padding:6px 14px;border-radius:var(--radius-sm);background:linear-gradient(135deg,var(--accent),#6c63ff);color:#fff;display:inline-block}
+.status-badge{padding:4px 12px;border-radius:50px;font-size:12px;font-weight:600}
+.status-badge.ontime{background:rgba(0,230,118,0.15);color:var(--success)}
+.status-badge.delayed{background:rgba(255,171,0,0.15);color:var(--warning)}
+.status-badge.cancelled{background:rgba(255,82,82,0.15);color:var(--danger)}
+.route-path{font-size:15px;font-weight:600;margin-bottom:8px}
+.route-driver{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.driver-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.driver-name{font-size:13px;color:var(--text-dim)}
+.route-details{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.route-detail{font-size:13px}
+.route-detail .label{color:var(--text-dim);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px}
+.route-detail .value{font-weight:600}
+.progress-section{margin-bottom:16px}
+.progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:6px}
+.progress-bar{height:6px;background:var(--card-border);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--cyan));border-radius:3px;transition:width 1s ease}
+.seat-info{font-size:13px;color:var(--text-dim);margin-bottom:16px}
+.seat-bar{height:4px;background:var(--card-border);border-radius:2px;margin-top:4px;overflow:hidden}
+.seat-fill{height:100%;background:var(--accent);border-radius:2px}
+.track-btn{width:100%;padding:10px;background:linear-gradient(135deg,rgba(79,140,255,0.15),rgba(0,229,255,0.1));border:1px solid var(--glass-border);color:var(--accent);border-radius:var(--radius-sm);cursor:pointer;font-weight:600;font-size:14px;transition:var(--transition);font-family:var(--font-body)}
+.track-btn:hover{background:var(--accent);color:#fff;box-shadow:0 4px 16px rgba(79,140,255,0.4)}
+.route-card-expanded{max-height:0;overflow:hidden;transition:max-height 0.4s ease}
+.route-card.expanded .route-card-expanded{max-height:200px}
+.expanded-content{padding-top:16px;border-top:1px solid var(--card-border);margin-top:16px}
+.stops-list{font-size:13px;color:var(--text-dim);line-height:2}
+
+/* SCHEDULE */
+#schedule{background:var(--primary-light)}
+.schedule-toggle{display:flex;justify-content:center;gap:8px;margin-bottom:32px}
+.toggle-btn{padding:10px 24px;border-radius:var(--radius-sm);border:1px solid var(--card-border);background:transparent;color:var(--text-dim);cursor:pointer;font-weight:600;transition:var(--transition);font-family:var(--font-body)}
+.toggle-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.schedule-table-wrap{overflow-x:auto;border-radius:var(--radius-md);border:1px solid var(--card-border)}
+.schedule-table{width:100%;border-collapse:collapse;min-width:700px}
+.schedule-table th{background:var(--primary-mid);padding:14px 16px;text-align:left;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);font-weight:600;position:sticky;top:0}
+.schedule-table td{padding:14px 16px;font-size:14px;border-bottom:1px solid var(--card-border)}
+.schedule-table tr:nth-child(even){background:rgba(79,140,255,0.03)}
+.schedule-table tr:hover{background:rgba(79,140,255,0.08)}
+.timeline-view{display:none;position:relative;padding-left:40px}
+.timeline-view.active{display:block}
+.table-view.active{display:block}
+.table-view{display:block}
+.timeline-line{position:absolute;left:18px;top:0;bottom:0;width:2px;background:var(--card-border)}
+.timeline-item{position:relative;padding:20px 0 20px 32px;border-bottom:none}
+.timeline-dot{position:absolute;left:-32px;top:24px;width:14px;height:14px;border-radius:50%;background:var(--accent);border:3px solid var(--primary-light);z-index:1}
+.timeline-dot.completed{background:var(--success)}
+.timeline-dot.active-stop{background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+.timeline-content{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:16px}
+.timeline-content h4{font-size:15px;margin-bottom:4px}
+.timeline-content p{font-size:13px;color:var(--text-dim)}
+.download-btn{display:inline-flex;align-items:center;gap:8px;margin-top:24px;padding:12px 24px;background:transparent;border:2px solid var(--glass-border);color:var(--text);border-radius:var(--radius-sm);cursor:pointer;font-weight:600;transition:var(--transition);font-family:var(--font-body)}
+.download-btn:hover{border-color:var(--accent);background:rgba(79,140,255,0.1)}
+
+/* FEATURES */
+.features-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px}
+.feature-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-md);padding:32px;text-align:center;transition:var(--transition);cursor:default;opacity:0;transform:translateY(40px)}
+.feature-card.visible{opacity:1;transform:translateY(0)}
+.feature-card:hover{transform:translateY(-4px) perspective(500px) rotateX(2deg) rotateY(2deg);box-shadow:var(--shadow-hover);border-color:var(--accent)}
+.feature-icon{font-size:48px;margin-bottom:16px;display:block}
+.feature-card h3{font-size:18px;font-weight:700;margin-bottom:8px}
+.feature-card p{font-size:14px;color:var(--text-dim);line-height:1.6}
+
+/* TESTIMONIALS */
+#testimonials{background:var(--primary-light)}
+.carousel-container{position:relative;overflow:hidden;max-width:700px;margin:0 auto}
+.carousel-track{display:flex;transition:transform 0.5s ease}
+.testimonial-card{min-width:100%;padding:40px;text-align:center}
+.testimonial-avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;margin:0 auto 16px}
+.testimonial-stars{color:#ffc107;font-size:18px;margin-bottom:12px;letter-spacing:2px}
+.testimonial-text{font-size:16px;line-height:1.8;color:var(--text-dim);margin-bottom:16px;font-style:italic}
+.testimonial-name{font-weight:700;font-size:15px}
+.testimonial-dept{font-size:13px;color:var(--text-dim)}
+.carousel-dots{display:flex;justify-content:center;gap:8px;margin-top:24px}
+.carousel-dot{width:10px;height:10px;border-radius:50%;background:var(--card-border);cursor:pointer;transition:var(--transition);border:none}
+.carousel-dot.active{background:var(--accent);transform:scale(1.2)}
+
+/* ABOUT */
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+.about-text h3{font-size:20px;font-weight:700;margin-bottom:12px;color:var(--accent)}
+.about-text p{color:var(--text-dim);line-height:1.8;margin-bottom:16px;font-size:15px}
+.about-visual{display:flex;align-items:center;justify-content:center}
+.bus-animation{position:relative;width:200px;height:120px}
+.bus-body{width:200px;height:80px;background:linear-gradient(135deg,var(--accent),#6c63ff);border-radius:12px 20px 8px 8px;position:relative}
+.bus-body::before{content:'';position:absolute;top:-20px;left:60px;width:100px;height:25px;background:linear-gradient(135deg,rgba(79,140,255,0.8),rgba(108,99,255,0.8));border-radius:8px 8px 0 0}
+.bus-window{position:absolute;top:15px;width:25px;height:20px;background:rgba(0,229,255,0.4);border-radius:4px}
+.bus-window:nth-child(1){left:15px}
+.bus-window:nth-child(2){left:50px}
+.bus-window:nth-child(3){left:85px}
+.bus-window:nth-child(4){left:120px}
+.bus-wheel{width:28px;height:28px;background:#222;border-radius:50%;position:absolute;bottom:-14px;border:4px solid #555;animation:wheelSpin 1s linear infinite}
+.bus-wheel::after{content:'';position:absolute;inset:4px;border-radius:50%;border:2px dashed #888}
+.bus-wheel.front{right:25px}
+.bus-wheel.rear{left:25px}
+@keyframes wheelSpin{to{transform:rotate(360deg)}}
+.bus-headlight{position:absolute;right:-4px;top:30px;width:8px;height:15px;background:var(--cyan);border-radius:0 4px 4px 0;box-shadow:0 0 20px var(--cyan)}
+.road{width:100%;height:4px;background:var(--text-dim);margin-top:14px;border-radius:2px;position:relative}
+.road::after{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:repeating-linear-gradient(90deg,var(--warning) 0 15px,transparent 15px 30px);transform:translateY(-50%)}
+.about-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:32px}
+.about-stat{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:20px;text-align:center}
+.about-stat .num{font-family:var(--font-heading);font-size:28px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.about-stat .lbl{font-size:12px;color:var(--text-dim);margin-top:4px}
+
+/* ALERT BANNER */
+.alert-banner{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-120%);background:var(--glass-bg);backdrop-filter:blur(20px);border:1px solid var(--warning);border-radius:var(--radius-sm);padding:12px 48px 12px 20px;z-index:999;font-size:14px;max-width:600px;width:calc(100% - 48px);transition:var(--transition);box-shadow:var(--shadow)}
+.alert-banner.show{transform:translateX(-50%) translateY(0)}
+.alert-close{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text);cursor:pointer;font-size:18px;padding:4px;transition:var(--transition)}
+.alert-close:hover{color:var(--danger)}
+
+/* CONTACT */
+#contact{background:var(--primary-light)}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px}
+.form-group{margin-bottom:20px;position:relative}
+.form-group label{position:absolute;left:14px;top:14px;font-size:14px;color:var(--text-dim);transition:var(--transition);pointer-events:none;background:transparent;padding:0 4px}
+.form-group input:focus~label,
+.form-group input:not(:placeholder-shown)~label,
+.form-group textarea:focus~label,
+.form-group textarea:not(:placeholder-shown)~label,
+.form-group select:focus~label,
+.form-group select:valid~label{top:-8px;font-size:11px;color:var(--accent);background:var(--primary-light)}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:14px;background:transparent;border:2px solid var(--card-border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;outline:none;transition:var(--transition);font-family:var(--font-body)}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--accent)}
+.form-group.valid input,.form-group.valid textarea{border-color:var(--success)}
+.form-group.error input,.form-group.error textarea{border-color:var(--danger)}
+.form-group .error-msg{font-size:12px;color:var(--danger);margin-top:4px;display:none}
+.form-group.error .error-msg{display:block}
+.form-group .check-icon{position:absolute;right:14px;top:14px;color:var(--success);opacity:0;transition:var(--transition)}
+.form-group.valid .check-icon{opacity:1}
+.form-group textarea{min-height:120px;resize:vertical}
+.submit-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),#6c63ff);color:#fff;border:none;border-radius:var(--radius-sm);font-size:16px;font-weight:700;cursor:pointer;transition:var(--transition);display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--font-body)}
+.submit-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(79,140,255,0.4)}
+.submit-btn.loading{pointer-events:none;opacity:0.8}
+.submit-spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;display:none;animation:spin 0.8s linear infinite}
+.submit-btn.loading .submit-spinner{display:block}
+.submit-btn.loading .submit-text{display:none}
+.contact-info{display:flex;flex-direction:column;gap:24px}
+.contact-item{display:flex;gap:16px;align-items:flex-start}
+.contact-icon{width:48px;height:48px;border-radius:var(--radius-sm);background:linear-gradient(135deg,rgba(79,140,255,0.15),rgba(0,229,255,0.1));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.contact-item h4{font-size:15px;margin-bottom:4px}
+.contact-item p{font-size:14px;color:var(--text-dim)}
+.social-links{display:flex;gap:12px;margin-top:24px}
+.social-link{width:44px;height:44px;border-radius:var(--radius-sm);border:1px solid var(--card-border);display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:18px;transition:var(--transition);color:var(--text-dim)}
+.social-link:hover{background:var(--accent);color:#fff;border-color:var(--accent);transform:translateY(-2px)}
+
+/* FAQ */
+.faq-list{max-width:800px;margin:0 auto}
+.faq-item{border:1px solid var(--card-border);border-radius:var(--radius-sm);margin-bottom:12px;overflow:hidden;transition:var(--transition)}
+.faq-item:hover{border-color:var(--accent)}
+.faq-question{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;cursor:pointer;font-weight:600;font-size:15px;background:var(--card-bg);transition:var(--transition)}
+.faq-question:hover{background:rgba(79,140,255,0.05)}
+.faq-icon{font-size:20px;transition:transform 0.3s ease;color:var(--accent);flex-shrink:0}
+.faq-item.open .faq-icon{transform:rotate(45deg)}
+.faq-answer{max-height:0;overflow:hidden;transition:max-height 0.4s ease}
+.faq-answer-content{padding:0 20px 18px;font-size:14px;color:var(--text-dim);line-height:1.7}
+
+/* FOOTER */
+footer{background:var(--primary);border-top:1px solid var(--card-border);position:relative;overflow:hidden}
+.footer-wave{position:absolute;top:0;left:0;width:100%;height:60px;overflow:hidden}
+.footer-wave svg{width:200%;height:60px;animation:wave 8s linear infinite}
+@keyframes wave{to{transform:translateX(-50%)}}
+.footer-content{max-width:1200px;margin:0 auto;padding:80px 24px 32px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px}
+.footer-brand h3{font-family:var(--font-heading);font-size:22px;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px}
+.footer-brand p{color:var(--text-dim);font-size:14px;line-height:1.7;margin-bottom:16px}
+.newsletter{display:flex;gap:8px}
+.newsletter input{flex:1;padding:10px 14px;background:var(--primary-light);border:1px solid var(--card-border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;outline:none;font-family:var(--font-body)}
+.newsletter button{padding:10px 18px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:600;transition:var(--transition);font-family:var(--font-body)}
+.newsletter button:hover{background:#6c63ff}
+.footer-col h4{font-size:14px;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;color:var(--text)}
+.footer-col ul{list-style:none}
+.footer-col ul li{margin-bottom:10px}
+.footer-col ul li a{color:var(--text-dim);text-decoration:none;font-size:14px;transition:var(--transition)}
+.footer-col ul li a:hover{color:var(--accent);padding-left:4px}
+.footer-bottom{max-width:1200px;margin:0 auto;padding:20px 24px;border-top:1px solid var(--card-border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--text-dim)}
+
+/* BACK TO TOP */
+.back-to-top{position:fixed;bottom:32px;right:32px;width:48px;height:48px;background:linear-gradient(135deg,var(--accent),#6c63ff);color:#fff;border:none;border-radius:var(--radius-full);cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;visibility:hidden;transform:translateY(20px);transition:var(--transition);box-shadow:0 4px 20px rgba(79,140,255,0.4)}
+.back-to-top.show{opacity:1;visibility:visible;transform:translateY(0)}
+.back-to-top:hover{transform:translateY(-4px)}
+
+/* TOAST */
+.toast{position:fixed;top:20px;right:20px;background:var(--success);color:#fff;padding:16px 24px;border-radius:var(--radius-sm);font-weight:600;font-size:14px;z-index:10000;transform:translateX(120%);transition:var(--transition);box-shadow:var(--shadow);display:flex;align-items:center;gap:8px}
+.toast.show{transform:translateX(0)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:9999;display:none;align-items:center;justify-content:center;padding:24px}
+.modal-overlay.show{display:flex}
+.modal{background:var(--primary-light);border:1px solid var(--glass-border);border-radius:var(--radius-md);padding:32px;max-width:420px;width:100%;text-align:center;animation:modalIn 0.3s ease}
+@keyframes modalIn{from{transform:scale(0.9);opacity:0}to{transform:scale(1);opacity:1}}
+.modal h3{font-family:var(--font-heading);font-size:20px;margin-bottom:8px}
+.modal p{color:var(--text-dim);font-size:14px;margin-bottom:20px}
+.modal-close{padding:10px 24px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:600;transition:var(--transition);font-family:var(--font-body)}
+.modal-close:hover{background:#6c63ff}
+
+/* ANIMATIONS */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+
+/* RESPONSIVE */
+@media(max-width:1200px){
+.footer-content{grid-template-columns:1fr 1fr}
+}
+@media(max-width:992px){
+.map-wrapper{grid-template-columns:1fr}
+.side-panel{max-height:300px}
+.about-grid{grid-template-columns:1fr;text-align:center}
+.about-visual{order:-1}
+.contact-grid{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+.nav-links,.nav-clock{display:none}
+.hamburger{display:flex}
+#navbar{padding:12px 20px}
+.routes-grid{grid-template-columns:1fr}
+.stats-bar{gap:24px}
+.footer-content{grid-template-columns:1fr}
+.footer-bottom{flex-direction:column;text-align:center}
+.hero-buttons{flex-direction:column;align-items:center}
+.schedule-toggle{flex-wrap:wrap}
+}
+@media(max-width:576px){
+.section{padding:60px 16px}
+.map-frame{height:300px}
+.search-card{padding:16px}
+.route-details{grid-template-columns:1fr}
+.about-stats{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){
+*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}
+}
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to content</a>
+
+<!-- PRELOADER -->
+<div id="preloader">
+<div class="preloader-bus">🚌</div>
+<div class="preloader-text">SmartBus</div>
+<div class="preloader-bar"><div class="preloader-bar-fill"></div></div>
+</div>
+
+<!-- ALERT BANNER -->
+<div class="alert-banner" id="alertBanner">
+<span id="alertText">⚠️ Bus #42 is delayed by 15 minutes on Route 7</span>
+<button class="alert-close" onclick="dismissAlert()" aria-label="Dismiss alert">✕</button>
+</div>
+
+<!-- NAVBAR -->
+<header>
+<nav id="navbar" aria-label="Main navigation">
+<a href="#" class="nav-logo"><span>🚌</span> SmartBus</a>
+<ul class="nav-links">
+<li><a href="#hero" class="active">Home</a></li>
+<li><a href="#livemap">Live Map</a></li>
+<li><a href="#routes">Routes</a></li>
+<li><a href="#schedule">Schedule</a></li>
+<li><a href="#about">About</a></li>
+<li><a href="#contact">Contact</a></li>
+</ul>
+<div class="nav-right">
+<div class="nav-clock" id="navClock">00:00:00</div>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">🌙</button>
+<button class="hamburger" id="hamburger" aria-label="Open menu">
+<span></span><span></span><span></span>
+</button>
+</div>
+</nav>
+</header>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+<a href="#hero" onclick="closeMenu()">Home</a>
+<a href="#livemap" onclick="closeMenu()">Live Map</a>
+<a href="#routes" onclick="closeMenu()">Routes</a>
+<a href="#schedule" onclick="closeMenu()">Schedule</a>
+<a href="#about" onclick="closeMenu()">About</a>
+<a href="#contact" onclick="closeMenu()">Contact</a>
+</div>
+
+<main id="main">
+<!-- HERO -->
+<section id="hero">
+<div class="hero-bg"></div>
+<canvas id="particleCanvas"></canvas>
+<div class="floating-bus" style="top:15%">🚌</div>
+<div class="floating-bus" style="top:35%">🚌</div>
+<div class="floating-bus" style="top:55%">🚌</div>
+<div class="floating-bus" style="top:75%">🚌</div>
+<div class="hero-content">
+<div class="hero-badge">🟢 System Online — All Buses Active</div>
+<h1 class="hero-title">
+<span class="word">Track</span>
+<span class="word">Your</span>
+<span class="word">College</span>
+<span class="word">Bus</span>
+<span class="word">in</span>
+<span class="word highlight">Real-Time</span>
+</h1>
+<p class="hero-sub">Never miss your ride again. Live GPS tracking, smart ETAs, and instant alerts for your campus commute.</p>
+<div class="hero-buttons">
+<a href="#livemap" class="btn btn-primary" onclick="createRipple(event)">🗺️ Open Live Map</a>
+<a href="#" class="btn btn-secondary" onclick="createRipple(event)">📱 Download App</a>
+</div>
+<div class="stats-bar">
+<div class="stat-item">
+<div class="stat-number" data-target="50">0</div>
+<div class="stat-label">Buses</div>
+</div>
+<div class="stat-item">
+<div class="stat-number" data-target="200">0</div>
+<div class="stat-label">Routes</div>
+</div>
+<div class="stat-item">
+<div class="stat-number" data-target="10000">0</div>
+<div class="stat-label">Students</div>
+</div>
+<div class="stat-item">
+<div class="stat-number" data-target="99">0</div>
+<div class="stat-label">Uptime %</div>
+</div>
+</div>
+</div>
+<div class="scroll-indicator" onclick="document.getElementById('livemap').scrollIntoView({behavior:'smooth'})">
+<span></span>
+</div>
+</section>
+
+<!-- LIVE MAP -->
+<section id="livemap">
+<div class="map-container">
+<div class="section-header">
+<h2 class="section-title">🗺️ Live Bus Map</h2>
+<p class="section-subtitle">Real-time GPS locations of all active campus buses</p>
+</div>
+<div class="map-wrapper">
+<div class="map-frame" role="img" aria-label="Live bus tracking map">
+<div class="map-grid"></div>
+<div class="map-road h1"></div>
+<div class="map-road h2"></div>
+<div class="map-road v1"></div>
+<div class="map-road v2"></div>
+<div class="map-road v3"></div>
+<span class="map-label" style="top:10%;left:5%">📍 Campus Gate</span>
+<span class="map-label" style="top:45%;left:70%">📍 Library</span>
+<span class="map-label" style="top:75%;left:30%">📍 Hostel Block</span>
+<span class="map-label" style="top:20%;left:85%">📍 Sports Complex</span>
+<span class="map-label" style="top:88%;left:60%">📍 Railway Station</span>
+<div class="bus-marker" style="top:28%;left:23%" aria-label="Bus 01">
+🚌
+<div class="marker-tooltip">
+<div class="tooltip-row"><span>Bus:</span><strong>#01</strong></div>
+<div class="tooltip-row"><span>Driver:</span><strong>Rajesh K.</strong></div>
+<div class="tooltip-row"><span>Speed:</span><strong>35 km/h</strong></div>
+<div class="tooltip-row"><span>ETA:</span><strong>8 min</strong></div>
+</div>
+</div>
+<div class="bus-marker" style="top:58%;left:53%" aria-label="Bus 07">
+🚌
+<div class="marker-tooltip">
+<div class="tooltip-row"><span>Bus:</span><strong>#07</strong></div>
+<div class="tooltip-row"><span>Driver:</span><strong>Anil M.</strong></div>
+<div class="tooltip-row"><span>Speed:</span><strong>28 km/h</strong></div>
+<div class="tooltip-row"><span>ETA:</span><strong>15 min</strong></div>
+</div>
+</div>
+<div class="bus-marker" style="top:35%;left:78%" aria-label="Bus 12">
+🚌
+<div class="marker-tooltip">
+<div class="tooltip-row"><span>Bus:</span><strong>#12</strong></div>
+<div class="tooltip-row"><span>Driver:</span><strong>Suresh P.</strong></div>
+<div class="tooltip-row"><span>Speed:</span><strong>42 km/h</strong></div>
+<div class="tooltip-row"><span>ETA:</span><strong>5 min</strong></div>
+</div>
+</div>
+<div class="bus-marker" style="top:72%;left:30%" aria-label="Bus 23">
+🚌
+<div class="marker-tooltip">
+<div class="tooltip-row"><span>Bus:</span><strong>#23</strong></div>
+<div class="tooltip-row"><span>Driver:</span><strong>Mohan S.</strong></div>
+<div class="tooltip-row"><span>Speed:</span><strong>0 km/h</strong></div>
+<div class="tooltip-row"><span>ETA:</span><strong>At Stop</strong></div>
+</div>
+</div>
+<div class="bus-marker" style="top:18%;left:50%" aria-label="Bus 42">
+🚌
+<div class="marker-tooltip">
+<div class="tooltip-row"><span>Bus:</span><strong>#42</strong></div>
+<div class="tooltip-row"><span>Driver:</span><strong>Vijay R.</strong></div>
+<div class="tooltip-row"><span>Speed:</span><strong>20 km/h</strong></div>
+<div class="tooltip-row"><span>ETA:</span><strong>22 min</strong></div>
+</div>
+</div>
+</div>
+<aside class="side-panel">
+<h3><span class="dot"></span> Active Buses</h3>
+<div class="active-bus-item">
+<div class="bus-badge">01</div>
+<div class="bus-info"><div class="name">Bus #01 — Route A</div><div class="location">Near Campus Gate</div></div>
+<div class="status-dot online"></div>
+</div>
+<div class="active-bus-item">
+<div class="bus-badge">07</div>
+<div class="bus-info"><div class="name">Bus #07 — Route C</div><div class="location">Library Junction</div></div>
+<div class="status-dot online"></div>
+</div>
+<div class="active-bus-item">
+<div class="bus-badge">12</div>
+<div class="bus-info"><div class="name">Bus #12 — Route B</div><div class="location">Sports Complex</div></div>
+<div class="status-dot online"></div>
+</div>
+<div class="active-bus-item">
+<div class="bus-badge">23</div>
+<div class="bus-info"><div class="name">Bus #23 — Route D</div><div class="location">Hostel Block (Stopped)</div></div>
+<div class="status-dot delayed"></div>
+</div>
+<div class="active-bus-item">
+<div class="bus-badge">42</div>
+<div class="bus-info"><div class="name">Bus #42 — Route E</div><div class="location">City Center</div></div>
+<div class="status-dot delayed"></div>
+</div>
+<div class="map-filter">
+<select aria-label="Select Route">
+<option>All Routes</option>
+<option>Route A — Campus Loop</option>
+<option>Route B — City Express</option>
+<option>Route C — Library Circuit</option>
+<option>Route D — Hostel Shuttle</option>
+<option>Route E — Railway Connector</option>
+</select>
+</div>
+<button class="refresh-btn" onclick="refreshMap(this)" aria-label="Refresh map">
+<span class="refresh-icon">🔄</span> Refresh Map
+</button>
+</aside>
+</div>
+</div>
+</section>
+
+<!-- SEARCH -->
+<div class="search-section" id="searchSection">
+<div class="search-card">
+<div class="search-input-wrap">
+<span class="icon">🔍</span>
+<input type="text" class="search-input" id="routeSearch" placeholder="Search buses, routes, or stops..." aria-label="Search routes">
+</div>
+<div class="filter-chips">
+<button class="chip active" data-filter="all" onclick="filterCards('all',this)">All</button>
+<button class="chip" data-filter="ontime" onclick="filterCards('ontime',this)">🟢 Running</button>
+<button class="chip" data-filter="delayed" onclick="filterCards('delayed',this)">🟡 Delayed</button>
+<button class="chip" data-filter="cancelled" onclick="filterCards('cancelled',this)">🔴 Cancelled</button>
+</div>
+</div>
+</div>
+
+<!-- ROUTES -->
+<section id="routes" class="section">
+<div class="section-header">
+<h2 class="section-title">📍 Active Routes</h2>
+<p class="section-subtitle">Real-time status of all college bus routes</p>
+</div>
+<div class="routes-grid" id="routesGrid">
+
+<div class="route-card status-ontime" data-status="ontime" data-search="bus 01 route a campus gate downtown mall science block">
+<div class="route-header">
+<span class="route-bus-number">BUS #01</span>
+<span class="status-badge ontime">🟢 On Time</span>
+</div>
+<div class="route-path">Campus Gate → Downtown Mall → Science Block</div>
+<div class="route-driver"><div class="driver-avatar">RK</div><span class="driver-name">Rajesh Kumar</span></div>
+<div class="route-details">
+<div class="route-detail"><div class="label">Departure</div><div class="value">8:00 AM</div></div>
+<div class="route-detail"><div class="label">ETA</div><div class="value highlight" style="color:var(--success)">8 min</div></div>
+<div class="route-detail"><div class="label">Arrival</div><div class="value">8:45 AM</div></div>
+<div class="route-detail"><div class="label">Platform</div><div class="value">A-1</div></div>
+</div>
+<div class="progress-section">
+<div class="progress-label"><span>Journey Progress</span><span>72%</span></div>
+<div class="progress-bar"><div class="progress-fill" style="width:72%"></div></div>
+</div>
+<div class="seat-info">
+32/50 seats filled
+<div class="seat-bar"><div class="seat-fill" style="width:64%"></div></div>
+</div>
+<button class="track-btn" onclick="trackBus('01')">📍 Track This Bus</button>
+</div>
+
+<div class="route-card status-delayed" data-status="delayed" data-search="bus 07 route c library junction market square hostel block b">
+<div class="route-header">
+<span class="route-bus-number">BUS #07</span>
+<span class="status-badge delayed">🟡 Delayed</span>
+</div>
+<div class="route-path">Library Junction → Market Square → Hostel Block B</div>
+<div class="route-driver"><div class="driver-avatar">AM</div><span class="driver-name">Anil Mehta</span></div>
+<div class="route-details">
+<div class="route-detail"><div class="label">Departure</div><div class="value">8:15 AM</div></div>
+<div class="route-detail"><div class="label">ETA</div><div class="value" style="color:var(--warning)">22 min</div></div>
+<div class="route-detail"><div class="label">Arrival</div><div class="value">9:10 AM</div></div>
+<div class="route-detail"><div class="label">Platform</div><div class="value">C-3</div></div>
+</div>
+<div class="progress-section">
+<div class="progress-label"><span>Journey Progress</span><span>38%</span></div>
+<div class="progress-bar"><div class="progress-fill" style="width:38%"></div></div>
+</div>
+<div class="seat-info">
+45/50 seats filled
+<div class="seat-bar"><div class="seat-fill" style="width:90%"></div></div>
+</div>
+<button class="track-btn" onclick="trackBus('07')">📍 Track This Bus</button>
+</div>
+
+<div class="route-card status-ontime" data-status="ontime" data-search="bus 12 route b sports complex railway station city center">
+<div class="route-header">
+<span class="route-bus-number">BUS #12</span>
+<span class="status-badge ontime">🟢 On Time</span>
+</div>
+<div class="route-path">Sports Complex → Railway Station → City Center</div>
+<div class="route-driver"><div class="driver-avatar">SP</div><span class="driver-name">Suresh Patil</span></div>
+<div class="route-details">
+<div class="route-detail"><div class="label">Departure</div><div class="value">7:45 AM</div></div>
+<div class="route-detail"><div class="label">ETA</div><div class="value" style="color:var(--success)">5 min</div></div>
+<div class="route-detail"><div class="label">Arrival</div><div class="value">8:30 AM</div></div>
+<div class="route-detail"><div class="label">Platform</div><div class="value">B-2</div></div>
+</div>
+<div class="progress-section">
+<div class="progress-label"><span>Journey Progress</span><span>88%</span></div>
+<div class="progress-bar"><div class="progress-fill" style="width:88%"></div></div>
+</div>
+<div class="seat-info">
+28/50 seats filled
+<div class="seat-bar"><div class="seat-fill" style="width:56%"></div></div>
+</div>
+<button class="track-btn" onclick="trackBus('12')">📍 Track This Bus</button>
+</div>
+
+<div class="route-card status-cancelled" data-status="cancelled" data-search="bus 18 route f admin block airport road tech park">
+<div class="route-header">
+<span class="route-bus-number">BUS #18</span>
+<span class="status-badge cancelled">🔴 Cancelled</span>
+</div>
+<div class="route-path">Admin Block → Airport Road → Tech Park</div>
+<div class="route-driver"><div class="driver-avatar">KV</div><span class="driver-name">Krishna Verma</span></div>
+<div class="route-details">
+<div class="route-detail"><div class="label">Departure</div><div class="value">—</div></div>
+<div class="route-detail"><div class="label">ETA</div><div class="value" style="color:var(--danger)">Cancelled</div></div>
+<div class="route-detail"><div class="label">Arrival</div><div class="value">—</div></div>
+<div class="route-detail"><div class="label">Platform</div><div class="value">—</div></div>
+</div>
+<div class="progress-section">
+<div class="progress-label"><span>Journey Progress</span><span>0%</span></div>
+<div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+</div>
+<div class="seat-info">
+0/50 seats filled
+<div class="seat-bar"><div class="seat-fill" style="width:0%"></div></div>
+</div>
+<button class="track-btn" onclick="trackBus('18')">📍 Track This Bus</button>
+</div>
+
+<div class="route-card status-ontime" data-status="ontime" data-search="bus 23 route d hostel block a medical college main market">
+<div class="route-header">
+<span class="route-bus-number">BUS #23</span>
+<span class="status-badge ontime">🟢 On Time</span>
+</div>
+<div class="route-path">Hostel Block A → Medical College → Main Market</div>
+<div class="route-driver"><div class="driver-avatar">MS</div><span class="driver-name">Mohan Singh</span></div>
+<div class="route-details">
+<div class="route-detail"><div class="label">Departure</div><div class="value">8:30 AM</div></div>
+<div class="route-detail"><div class="label">ETA</div><div class="value" style="color:var(--success)">12 min</div></div>
+<div class="route-detail"><div class="label">Arrival</div><div class="value">9:15 AM</div></div>
+<div class="route-detail"><div class="label">Platform</div><div class="value">D-1</div></div>
+</div>
+<div class="progress-section">
+<div class="progress-label"><span>Journey Progress</span><span>55%</span></div>
+<div class="progress-bar"><div class="progress-fill" style="width:55%"></div></div>
+</div>
+<div class="seat-info">
+38/50 seats filled
+<div class="seat-bar"><div class="seat-fill" style="width:76%"></div></div>
+</div>
+<button class="track-btn" onclick="trackBus('23')">📍 Track This Bus</button>
+</div>
+
+<div class="route-card status-delayed" data-status="delayed" data-search="bus 42 route e city center ring road campus south gate">
+<div class="route-header">
+<span class="route-bus-number">BUS #42</span>
+<span class="status-badge delayed">🟡 Delayed</span>
+</div>
+<div class="route-path">City Center → Ring Road → Campus South Gate</div>
+<div class="route-driver"><div class="driver-avatar">VR</div><span class="driver-name">Vijay Rao</span></div>
+<div class="route-details">
+<div class="route-detail"><div class="label">Departure</div><div class="value">7:30 AM</div></div>
+<div class="route-detail"><div class="label">ETA</div><div class="value" style="color:var(--warning)">18 min</div></div>
+<div class="route-detail"><div class="label">Arrival</div><div class="value">8:50 AM</div></div>
+<div class="route-detail"><div class="label">Platform</div><div class="value">E-2</div></div>
+</div>
+<div class="progress-section">
+<div class="progress-label"><span>Journey Progress</span><span>45%</span></div>
+<div class="progress-bar"><div class="progress-fill" style="width:45%"></div></div>
+</div>
+<div class="seat-info">
+42/50 seats filled
+<div class="seat-bar"><div class="seat-fill" style="width:84%"></div></div>
+</div>
+<button class="track-btn" onclick="trackBus('42')">📍 Track This Bus</button>
+</div>
+
+<div class="route-card status-ontime" data-status="ontime" data-search="bus 31 route g engineering block central library bus depot">
+<div class="route-header">
+<span class="route-bus-number">BUS #31</span>
+<span class="status-badge ontime">🟢 On Time</span>
+</div>
+<div class="route-path">Engineering Block → Central Library → Bus Depot</div>
+<div class="route-driver"><div class="driver-avatar">PK</div><span class="driver-name">Praveen Kumar</span></div>
+<div class="route-details">
+<div class="route-detail"><div class="label">Departure</div><div class="value">9:00 AM</div></div>
+<div class="route-detail"><div class="label">ETA</div><div class="value" style="color:var(--success)">3 min</div></div>
+<div class="route-detail"><div class="label">Arrival</div><div class="value">9:40 AM</div></div>
+<div class="route-detail"><div class="label">Platform</div><div class="value">G-1</div></div>
+</div>
+<div class="progress-section">
+<div class="progress-label"><span>Journey Progress</span><span>92%</span></div>
+<div class="progress-bar"><div class="progress-fill" style="width:92%"></div></div>
+</div>
+<div class="seat-info">
+18/50 seats filled
+<div class="seat-bar"><div class="seat-fill" style="width:36%"></div></div>
+</div>
+<button class="track-btn" onclick="trackBus('31')">📍 Track This Bus</button>
+</div>
+
+<div class="route-card status-ontime" data-status="ontime" data-search="bus 55 route h women hostel shopping complex main gate">
+<div class="route-header">
+<span class="route-bus-number">BUS #55</span>
+<span class="status-badge ontime">🟢 On Time</span>
+</div>
+<div class="route-path">Women's Hostel → Shopping Complex → Main Gate</div>
+<div class="route-driver"><div class="driver-avatar">DL</div><span class="driver-name">Deepa Lakshmi</span></div>
+<div class="route-details">
+<div class="route-detail"><div class="label">Departure</div><div class="value">8:20 AM</div></div>
+<div class="route-detail"><div class="label">ETA</div><div class="value" style="color:var(--success)">10 min</div></div>
+<div class="route-detail"><div class="label">Arrival</div><div class="value">9:00 AM</div></div>
+<div class="route-detail"><div class="label">Platform</div><div class="value">H-2</div></div>
+</div>
+<div class="progress-section">
+<div class="progress-label"><span>Journey Progress</span><span>65%</span></div>
+<div class="progress-bar"><div class="progress-fill" style="width:65%"></div></div>
+</div>
+<div class="seat-info">
+35/50 seats filled
+<div class="seat-bar"><div class="seat-fill" style="width:70%"></div></div>
+</div>
+<button class="track-btn" onclick="trackBus('55')">📍 Track This Bus</button>
+</div>
+
+</div>
+</section>
+
+<!-- SCHEDULE -->
+<section id="schedule">
+<div class="section" style="padding-top:0">
+<div class="section-header">
+<h2 class="section-title">🕐 Today's Schedule</h2>
+<p class="section-subtitle">Complete timetable for all campus buses</p>
+</div>
+<div class="schedule-toggle">
+<button class="toggle-btn active" onclick="toggleScheduleView('table',this)">📋 List View</button>
+<button class="toggle-btn" onclick="toggleScheduleView('timeline',this)">📅 Timeline View</button>
+</div>
+<div class="table-view active" id="tableView">
+<div class="schedule-table-wrap">
+<table class="schedule-table">
+<thead><tr><th>Bus No</th><th>Route</th><th>Departure</th><th>Arrival</th><th>Status</th><th>Platform</th></tr></thead>
+<tbody>
+<tr><td><strong>#01</strong></td><td>Campus Gate → Science Block</td><td>8:00 AM</td><td>8:45 AM</td><td><span class="status-badge ontime">On Time</span></td><td>A-1</td></tr>
+<tr><td><strong>#07</strong></td><td>Library → Hostel Block B</td><td>8:15 AM</td><td>9:10 AM</td><td><span class="status-badge delayed">Delayed</span></td><td>C-3</td></tr>
+<tr><td><strong>#12</strong></td><td>Sports Complex → City Center</td><td>7:45 AM</td><td>8:30 AM</td><td><span class="status-badge ontime">On Time</span></td><td>B-2</td></tr>
+<tr><td><strong>#18</strong></td><td>Admin Block → Tech Park</td><td>9:00 AM</td><td>9:50 AM</td><td><span class="status-badge cancelled">Cancelled</span></td><td>—</td></tr>
+<tr><td><strong>#23</strong></td><td>Hostel A → Main Market</td><td>8:30 AM</td><td>9:15 AM</td><td><span class="status-badge ontime">On Time</span></td><td>D-1</td></tr>
+<tr><td><strong>#31</strong></td><td>Engineering → Bus Depot</td><td>9:00 AM</td><td>9:40 AM</td><td><span class="status-badge ontime">On Time</span></td><td>G-1</td></tr>
+<tr><td><strong>#42</strong></td><td>City Center → South Gate</td><td>7:30 AM</td><td>8:50 AM</td><td><span class="status-badge delayed">Delayed</span></td><td>E-2</td></tr>
+<tr><td><strong>#55</strong></td><td>Women's Hostel → Main Gate</td><td>8:20 AM</td><td>9:00 AM</td><td><span class="status-badge ontime">On Time</span></td><td>H-2</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="timeline-view" id="timelineView">
+<div class="timeline-line"></div>
+<div class="timeline-item"><div class="timeline-dot completed"></div><div class="timeline-content"><h4>7:30 AM — Bus #42</h4><p>Departed City Center → Ring Road → Campus South Gate (Delayed)</p></div></div>
+<div class="timeline-item"><div class="timeline-dot completed"></div><div class="timeline-content"><h4>7:45 AM — Bus #12</h4><p>Departed Sports Complex → Railway Station → City Center</p></div></div>
+<div class="timeline-item"><div class="timeline-dot completed"></div><div class="timeline-content"><h4>8:00 AM — Bus #01</h4><p>Departed Campus Gate → Downtown Mall → Science Block</p></div></div>
+<div class="timeline-item"><div class="timeline-dot active-stop"></div><div class="timeline-content"><h4>8:15 AM — Bus #07</h4><p>Departed Library Junction → Market Square → Hostel Block B (Delayed)</p></div></div>
+<div class="timeline-item"><div class="timeline-dot active-stop"></div><div class="timeline-content"><h4>8:20 AM — Bus #55</h4><p>Departed Women's Hostel → Shopping Complex → Main Gate</p></div></div>
+<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><h4>8:30 AM — Bus #23</h4><p>Hostel Block A → Medical College → Main Market</p></div></div>
+<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><h4>9:00 AM — Bus #31</h4><p>Engineering Block → Central Library → Bus Depot</p></div></div>
+</div>
+<button class="download-btn">📥 Download Full Schedule</button>
+</div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" class="section">
+<div class="section-header">
+<h2 class="section-title">✨ Why SmartBus?</h2>
+<p class="section-subtitle">Built with cutting-edge technology for the modern campus</p>
+</div>
+<div class="features-grid">
+<div class="feature-card"><span class="feature-icon">📡</span><h3>Real-Time GPS Tracking</h3><p>Live location updates every 5 seconds with military-grade GPS accuracy for all campus buses.</p></div>
+<div class="feature-card"><span class="feature-icon">⏱️</span><h3>Accurate ETA Predictions</h3><p>AI-powered arrival predictions considering traffic, weather, and historical patterns.</p></div>
+<div class="feature-card"><span class="feature-icon">🔔</span><h3>Instant Notifications</h3><p>Get push alerts for delays, cancellations, and route changes before they affect you.</p></div>
+<div class="feature-card"><span class="feature-icon">🛡️</span><h3>Verified Drivers</h3><p>All drivers are background-checked and trained. View driver profiles and ratings.</p></div>
+<div class="feature-card"><span class="feature-icon">📊</span><h3>Route Analytics</h3><p>View passenger trends, peak hours, and historical performance data for every route.</p></div>
+<div class="feature-card"><span class="feature-icon">♿</span><h3>Accessibility First</h3><p>Wheelchair-accessible bus indicators, screen reader support, and high-contrast mode.</p></div>
+</div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="testimonials">
+<div class="section">
+<div class="section-header">
+<h2 class="section-title">💬 Student Reviews</h2>
+<p class="section-subtitle">What our students say about SmartBus</p>
+</div>
+<div class="carousel-container" id="carousel">
+<div class="carousel-track" id="carouselTrack">
+<div class="testimonial-card">
+<div class="testimonial-avatar">AP</div>
+<div class="testimonial-stars">★★★★★</div>
+<p class="testimonial-text">"SmartBus completely changed my commute. I used to wait 30 minutes not knowing when the bus would arrive. Now I leave my hostel at exactly the right time!"</p>
+<div class="testimonial-name">Ananya Patel</div>
+<div class="testimonial-dept">Computer Science, 3rd Year</div>
+</div>
+<div class="testimonial-card">
+<div class="testimonial-avatar">RK</div>
+<div class="testimonial-stars">★★★★★</div>
+<p class="testimonial-text">"The delay notifications are a lifesaver. Last week I got alerted about a cancellation and took an alternate route. Best campus app we have!"</p>
+<div class="testimonial-name">Rahul Krishnan</div>
+<div class="testimonial-dept">Mechanical Engineering, 2nd Year</div>
+</div>
+<div class="testimonial-card">
+<div class="testimonial-avatar">SM</div>
+<div class="testimonial-stars">★★★★☆</div>
+<p class="testimonial-text">"Clean interface, accurate tracking, and the schedule view helps me plan my entire day. Would love to see a feature for booking seats in advance."</p>
+<div class="testimonial-name">Sneha Mukherjee</div>
+<div class="testimonial-dept">Biotechnology, 4th Year</div>
+</div>
+<div class="testimonial-card">
+<div class="testimonial-avatar">VG</div>
+<div class="testimonial-stars">★★★★★</div>
+<p class="testimonial-text">"As a faculty member, I appreciate how reliable the system is. The analytics dashboard helps us optimize routes based on actual usage patterns."</p>
+<div class="testimonial-name">Dr. Vikram Gupta</div>
+<div class="testimonial-dept">Professor, Physics Department</div>
+</div>
+<div class="testimonial-card">
+<div class="testimonial-avatar">ND</div>
+<div class="testimonial-stars">★★★★★</div>
+<p class="testimonial-text">"I'm visually impaired and the accessibility features in SmartBus are outstanding. The voice announcements and high contrast mode make it usable for everyone."</p>
+<div class="testimonial-name">Neha Desai</div>
+<div class="testimonial-dept">Literature, 1st Year</div>
+</div>
+</div>
+<div class="carousel-dots" id="carouselDots"></div>
+</div>
+</div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="section">
+<div class="section-header">
+<h2 class="section-title">🏫 About SmartBus</h2>
+<p class="section-subtitle">The story behind campus transportation revolution</p>
+</div>
+<div class="about-grid">
+<div class="about-text">
+<h3>Transforming Campus Commute</h3>
+<p>SmartBus was born from a simple frustration — students standing at bus stops with no idea when their bus would arrive. Our team of engineering students built the first prototype in a hackathon, and it quickly grew into a full campus solution.</p>
+<p>Today, SmartBus tracks over 50 buses across 200+ routes, serving more than 10,000 students daily. Our system uses real-time GPS, machine learning for ETA prediction, and instant push notifications to ensure no student ever misses their ride.</p>
+<p>We partner with the campus transportation department to continuously improve routes, optimize schedules, and reduce wait times. Our mission is to make campus commuting stress-free, efficient, and sustainable.</p>
+<div class="about-stats">
+<div class="about-stat"><div class="num" data-target="50">0</div><div class="lbl">Active Buses</div></div>
+<div class="about-stat"><div class="num" data-target="200">0</div><div class="lbl">Routes Covered</div></div>
+<div class="about-stat"><div class="num" data-target="5000">0</div><div class="lbl">Daily Rides</div></div>
+<div class="about-stat"><div class="num" data-target="10000">0</div><div class="lbl">Happy Students</div></div>
+</div>
+</div>
+<div class="about-visual">
+<div class="bus-animation">
+<div class="bus-body">
+<div class="bus-window"></div>
+<div class="bus-window"></div>
+<div class="bus-window"></div>
+<div class="bus-window"></div>
+<div class="bus-wheel front"></div>
+<div class="bus-wheel rear"></div>
+<div class="bus-headlight"></div>
+</div>
+<div class="road"></div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" style="background:var(--primary-light)">
+<div class="section">
+<div class="section-header">
+<h2 class="section-title">❓ FAQ</h2>
+<p class="section-subtitle">Frequently asked questions about SmartBus</p>
+</div>
+<div class="faq-list">
+<div class="faq-item">
+<div class="faq-question" onclick="toggleFaq(this)">How accurate is the real-time tracking?<span class="faq-icon">+</span></div>
+<div class="faq-answer"><div class="faq-answer-content">Our GPS tracking updates every 5 seconds with accuracy within 3 meters. We use multi-satellite triangulation and dead reckoning to maintain accuracy even in areas with poor GPS signal like underpasses and tunnels.</div></div>
+</div>
+<div class="faq-item">
+<div class="faq-question" onclick="toggleFaq(this)">What happens if my bus is cancelled?<span class="faq-icon">+</span></div>
+<div class="faq-answer"><div class="faq-answer-content">You'll receive an instant push notification with alternative bus options and their ETAs. The app automatically suggests the fastest alternative route to your destination. Cancellations are updated in real-time by the transport office.</div></div>
+</div>
+<div class="faq-item">
+<div class="faq-question" onclick="toggleFaq(this)">Is SmartBus available as a mobile app?<span class="faq-icon">+</span></div>
+<div class="faq-answer"><div class="faq-answer-content">Yes! SmartBus is available on both iOS and Android. You can also use the Progressive Web App (PWA) directly from your browser. The mobile app supports offline schedule viewing and background notifications.</div></div>
+</div>
+<div class="faq-item">
+<div class="faq-question" onclick="toggleFaq(this)">How do I report an issue with a bus or driver?<span class="faq-icon">+</span></div>
+<div class="faq-answer"><div class="faq-answer-content">Use the "Report Issue" button on any bus tracking page, or visit the Contact section below. All reports are reviewed within 24 hours by the campus transportation committee. Anonymous reporting is also available.</div></div>
+</div>
+<div class="faq-item">
+<div class="faq-question" onclick="toggleFaq(this)">Can I set up alerts for specific routes?<span class="faq-icon">+</span></div>
+<div class="faq-answer"><div class="faq-answer-content">Absolutely! Go to your profile settings and select "My Routes." You can set custom alerts for departure reminders, delay notifications, and even when your bus is a certain number of minutes away from your stop.</div></div>
+</div>
+<div class="faq-item">
+<div class="faq-question" onclick="toggleFaq(this)">Is the service free for students?<span class="faq-icon">+</span></div>
+<div class="faq-answer"><div class="faq-answer-content">Yes, SmartBus is completely free for all registered students and faculty members. Simply sign up with your college email ID to get full access. The service is funded by the campus transportation budget.</div></div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+<div class="section">
+<div class="section-header">
+<h2 class="section-title">📬 Get In Touch</h2>
+<p class="section-subtitle">Have questions or feedback? We'd love to hear from you</p>
+</div>
+<div class="contact-grid">
+<form id="contactForm" novalidate>
+<div class="form-group">
+<input type="text" id="name" placeholder=" " required>
+<label for="name">Full Name</label>
+<span class="check-icon">✓</span>
+<div class="error-msg">Please enter your name</div>
+</div>
+<div class="form-group">
+<input type="email" id="email" placeholder=" " required>
+<label for="email">Email Address</label>
+<span class="check-icon">✓</span>
+<div class="error-msg">Please enter a valid email</div>
+</div>
+<div class="form-group">
+<input type="tel" id="phone" placeholder=" ">
+<label for="phone">Phone (Optional)</label>
+<span class="check-icon">✓</span>
+</div>
+<div class="form-group">
+<select id="subject" required>
+<option value="" disabled selected></option>
+<option>General Inquiry</option>
+<option>Route Feedback</option>
+<option>Report Issue</option>
+<option>Feature Request</option>
+<option>Partnership</option>
+</select>
+<label for="subject">Subject</label>
+</div>
+<div class="form-group">
+<textarea id="message" placeholder=" " required></textarea>
+<label for="message">Your Message</label>
+<span class="check-icon">✓</span>
+<div class="error-msg">Please enter your message</div>
+</div>
+<button type="submit" class="submit-btn">
+<span class="submit-text">Send Message 🚀</span>
+<div class="submit-spinner"></div>
+</button>
+</form>
+<div class="contact-info">
+<div class="contact-item">
+<div class="contact-icon">📍</div>
+<div><h4>Address</h4><p>Transportation Hub, Main Campus<br>University Avenue, Block C-12</p></div>
+</div>
+<div class="contact-item">
+<div class="contact-icon">📞</div>
+<div><h4>Phone</h4><p>+91 98765 43210<br>+91 12345 67890</p></div>
+</div>
+<div class="contact-item">
+<div class="contact-icon">✉️</div>
+<div><h4>Email</h4><p>support@smartbus.edu<br>admin@smartbus.edu</p></div>
+</div>
+<div class="contact-item">
+<div class="contact-icon">🕐</div>
+<div><h4>Operating Hours</h4><p>Mon-Sat: 6:00 AM — 10:00 PM<br>Sunday: 7:00 AM — 8:00 PM</p></div>
+</div>
+<div class="social-links">
+<a href="#" class="social-link" aria-label="Facebook">f</a>
+<a href="#" class="social-link" aria-label="Twitter">𝕏</a>
+<a href="#" class="social-link" aria-label="Instagram">📷</a>
+<a href="#" class="social-link" aria-label="LinkedIn">in</a>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+
+<!-- FOOTER -->
+<footer>
+<div class="footer-wave">
+<svg viewBox="0 0 1200 60" preserveAspectRatio="none">
+<path d="M0,30 C150,50 350,0 600,30 C850,60 1050,10 1200,30 L1200,0 L0,0 Z" fill="var(--primary-light)" opacity="0.3"/>
+<path d="M0,30 C200,10 400,50 600,30 C800,10 1000,50 1200,30 L1200,0 L0,0 Z" fill="var(--primary-light)" opacity="0.2"/>
+</svg>
+</div>
+<div class="footer-content">
+<div class="footer-brand">
+<h3>🚌 SmartBus</h3>
+<p>Making campus commuting stress-free, efficient, and reliable for every student. Track, plan, and ride with confidence.</p>
+<p style="font-size:13px;margin-bottom:12px">Made with ❤️ for Students</p>
+<div class="newsletter">
+<input type="email" placeholder="Your email for updates...">
+<button>Subscribe</button>
+</div>
+</div>
+<div class="footer-col">
+<h4>Quick Links</h4>
+<ul>
+<li><a href="#hero">Home</a></li>
+<li><a href="#livemap">Live Map</a></li>
+<li><a href="#routes">Routes</a></li>
+<li><a href="#schedule">Schedule</a></li>
+<li><a href="#about">About</a></li>
+</ul>
+</div>
+<div class="footer-col">
+<h4>Top Routes</h4>
+<ul>
+<li><a href="#">Campus Loop</a></li>
+<li><a href="#">City Express</a></li>
+<li><a href="#">Hostel Shuttle</a></li>
+<li><a href="#">Railway Connector</a></li>
+<li><a href="#">Night Service</a></li>
+</ul>
+</div>
+<div class="footer-col">
+<h4>Support</h4>
+<ul>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#contact">Contact Us</a></li>
+<li><a href="#">Privacy Policy</a></li>
+<li><a href="#">Terms of Service</a></li>
+<li><a href="#">Report Bug</a></li>
+</ul>
+</div>
+</div>
+<div class="footer-bottom">
+<span>© 2024 SmartBus. All rights reserved.</span>
+<span>Version 2.4.1 | Status: 🟢 All Systems Operational</span>
+</div>
+</footer>
+
+<!-- BACK TO TOP -->
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">↑</button>
+
+<!-- TOAST -->
+<div class="toast" id="toast">✅ Message sent successfully!</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+<div class="modal">
+<h3>📍 Tracking Bus <span id="modalBusId">#01</span></h3>
+<p>Live tracking has been activated. You will receive real-time updates and ETA notifications for this bus.</p>
+<button class="modal-close" onclick="closeModal()">Got It!</button>
+</div>
+</div>
+
+<script>
+// PRELOADER
+window.addEventListener('load',()=>{
+setTimeout(()=>{document.getElementById('preloader').classList.add('hidden')},2500);
+});
+
+// PARTICLES
+(function(){
+const c=document.getElementById('particleCanvas');
+const ctx=c.getContext('2d');
+let w,h,particles=[];
+function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight}
+resize();
+window.addEventListener('resize',resize);
+class Particle{
+constructor(){this.x=Math.random()*w;this.y=Math.random()*h;this.vx=(Math.random()-0.5)*0.5;this.vy=(Math.random()-0.5)*0.5;this.r=Math.random()*2+0.5}
+update(){this.x+=this.vx;this.y+=this.vy;if(this.x<0||this.x>w)this.vx*=-1;if(this.y<0||this.y>h)this.vy*=-1}
+draw(){ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fillStyle='rgba(79,140,255,0.4)';ctx.fill()}
+}
+for(let i=0;i<80;i++)particles.push(new Particle());
+function animate(){
+ctx.clearRect(0,0,w,h);
+particles.forEach(p=>{p.update();p.draw()});
+for(let i=0;i<particles.length;i++){
+for(let j=i+1;j<particles.length;j++){
+const dx=particles[i].x-particles[j].x;
+const dy=particles[i].y-particles[j].y;
+const dist=Math.sqrt(dx*dx+dy*dy);
+if(dist<120){
+ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);
+ctx.lineTo(particles[j].x,particles[j].y);
+ctx.strokeStyle=`rgba(79,140,255,${0.15*(1-dist/120)})`;
+ctx.lineWidth=0.5;ctx.stroke();
+}
+}
+}
+requestAnimationFrame(animate);
+}
+animate();
+})();
+
+// NAVBAR SCROLL
+const navbar=document.getElementById('navbar');
+const backToTop=document.getElementById('backToTop');
+const sections=document.querySelectorAll('section[id]');
+const navLinks=document.querySelectorAll('.nav-links a');
+
+window.addEventListener('scroll',()=>{
+const sy=window.scrollY;
+navbar.classList.toggle('scrolled',sy>50);
+backToTop.classList.toggle('show',sy>500);
+
+// Active link
+let current='';
+sections.forEach(s=>{
+const top=s.offsetTop-120;
+if(sy>=top)current=s.getAttribute('id');
+});
+navLinks.forEach(a=>{
+a.classList.remove('active');
+if(a.getAttribute('href')==='#'+current)a.classList.add('active');
+});
+});
+
+// CLOCK
+function updateClock(){
+const now=new Date();
+document.getElementById('navClock').textContent=now.toLocaleTimeString('en-US',{hour12:true});
+}
+setInterval(updateClock,1000);
+updateClock();
+
+// HAMBURGER
+const hamburger=document.getElementById('hamburger');
+const mobileMenu=document.getElementById('mobileMenu');
+hamburger.addEventListener('click',()=>{
+hamburger.classList.toggle('active');
+mobileMenu.classList.toggle('active');
+document.body.style.overflow=mobileMenu.classList.contains('active')?'hidden':'';
+});
+function closeMenu(){
+hamburger.classList.remove('active');
+mobileMenu.classList.remove('active');
+document.body.style.overflow='';
+}
+
+// DARK MODE
+const themeToggle=document.getElementById('themeToggle');
+let darkMode=localStorage.getItem('theme')!=='light';
+function setTheme(dark){
+document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+themeToggle.textContent=dark?'🌙':'☀️';
+localStorage.setItem('theme',dark?'dark':'light');
+darkMode=dark;
+}
+if(!darkMode)setTheme(false);
+themeToggle.addEventListener('click',()=>setTheme(!darkMode));
+
+// RIPPLE
+function createRipple(e){
+const btn=e.currentTarget;
+const circle=document.createElement('span');
+const diameter=Math.max(btn.clientWidth,btn.clientHeight);
+const radius=diameter/2;
+const rect=btn.getBoundingClientRect();
+circle.style.width=circle.style.height=`${diameter}px`;
+circle.style.left=`${e.clientX-rect.left-radius}px`;
+circle.style.top=`${e.clientY-rect.top-radius}px`;
+circle.classList.add('ripple');
+const existing=btn.querySelector('.ripple');
+if(existing)existing.remove();
+btn.appendChild(circle);
+}
+
+// COUNTER ANIMATION
+function animateCounters(entries,observer){
+entries.forEach(entry=>{
+if(entry.isIntersecting){
+const counters=entry.target.querySelectorAll('[data-target]');
+counters.forEach(counter=>{
+const target=+counter.getAttribute('data-target');
+const duration=2000;
+const start=performance.now();
+function update(now){
+const elapsed=now-start;
+const progress=Math.min(elapsed/duration,1);
+const eased=1-Math.pow(1-progress,3);
+counter.textContent=Math.floor(eased*target)+(target>=100?'+':'%');
+if(progress<1)requestAnimationFrame(update);
+}
+requestAnimationFrame(update);
+});
+observer.unobserve(entry.target);
+}
+});
+}
+const counterObserver=new IntersectionObserver(animateCounters,{threshold:0.3});
+document.querySelectorAll('.stats-bar,.about-stats').forEach(el=>counterObserver.observe(el));
+
+// SCROLL ANIMATIONS
+const scrollObserver=new IntersectionObserver((entries)=>{
+entries.forEach((entry,i)=>{
+if(entry.isIntersecting){
+setTimeout(()=>{entry.target.classList.add('visible')},i*100);
+scrollObserver.unobserve(entry.target);
+}
+});
+},{threshold:0.1});
+document.querySelectorAll('.route-card,.feature-card').forEach(el=>scrollObserver.observe(el));
+
+// SEARCH & FILTER
+const searchInput=document.getElementById('routeSearch');
+const routeCards=document.querySelectorAll('.route-card');
+let activeFilter='all';
+
+searchInput.addEventListener('input',(e)=>{
+const query=e.target.value.toLowerCase();
+filterAndSearch(query,activeFilter);
+});
+
+function filterCards(status,btn){
+document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+btn.classList.add('active');
+activeFilter=status;
+filterAndSearch(searchInput.value.toLowerCase(),status);
+}
+
+function filterAndSearch(query,status){
+routeCards.forEach(card=>{
+const searchText=card.getAttribute('data-search').toLowerCase();
+const cardStatus=card.getAttribute('data-status');
+const matchesSearch=!query||searchText.includes(query);
+const matchesFilter=status==='all'||cardStatus===status;
+card.style.display=(matchesSearch&&matchesFilter)?'block':'none';
+});
+}
+
+// SCHEDULE VIEW TOGGLE
+function toggleScheduleView(view,btn){
+document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+document.getElementById('tableView').style.display=view==='table'?'block':'none';
+document.getElementById('timelineView').style.display=view==='timeline'?'block':'none';
+}
+
+// FAQ ACCORDION
+function toggleFaq(el){
+const item=el.parentElement;
+const wasOpen=item.classList.contains('open');
+document.querySelectorAll('.faq-item').forEach(i=>{
+i.classList.remove('open');
+i.querySelector('.faq-answer').style.maxHeight=null;
+});
+if(!wasOpen){
+item.classList.add('open');
+const answer=item.querySelector('.faq-answer');
+answer.style.maxHeight=answer.scrollHeight+'px';
+}
+}
+
+// CAROUSEL
+const track=document.getElementById('carouselTrack');
+const dotsContainer=document.getElementById('carouselDots');
+const slides=track.querySelectorAll('.testimonial-card');
+let currentSlide=0;
+let carouselInterval;
+
+slides.forEach((_,i)=>{
+const dot=document.createElement('button');
+dot.classList.add('carousel-dot');
+if(i===0)dot.classList.add('active');
+dot.addEventListener('click',()=>goToSlide(i));
+dot.setAttribute('aria-label',`Go to review ${i+1}`);
+dotsContainer.appendChild(dot);
+});
+
+function goToSlide(index){
+currentSlide=index;
+track.style.transform=`translateX(-${index*100}%)`;
+document.querySelectorAll('.carousel-dot').forEach((d,i)=>{
+d.classList.toggle('active',i===index);
+});
+}
+
+function nextSlide(){
+currentSlide=(currentSlide+1)%slides.length;
+goToSlide(currentSlide);
+}
+
+function startCarousel(){carouselInterval=setInterval(nextSlide,4000)}
+function stopCarousel(){clearInterval(carouselInterval)}
+startCarousel();
+document.getElementById('carousel').addEventListener('mouseenter',stopCarousel);
+document.getElementById('carousel').addEventListener('mouseleave',startCarousel);
+
+// ALERT BANNER
+const alerts=[
+'⚠️ Bus #42 is delayed by 15 minutes on Route 7',
+'🟢 Bus #31 has resumed service on Route G — ETA 3 min',
+'🔴 Bus #18 cancelled today due to maintenance. Use Bus #23 as alternate.'
+];
+let alertIndex=0;
+let alertDismissed=false;
+setTimeout(()=>{
+if(!alertDismissed)document.getElementById('alertBanner').classList.add('show');
+},3500);
+setInterval(()=>{
+if(alertDismissed)return;
+alertIndex=(alertIndex+1)%alerts.length;
+document.getElementById('alertText').textContent=alerts[alertIndex];
+},5000);
+function dismissAlert(){
+document.getElementById('alertBanner').classList.remove('show');
+alertDismissed=true;
+}
+
+// REFRESH MAP
+function refreshMap(btn){
+btn.classList.add('spinning');
+setTimeout(()=>btn.classList.remove('spinning'),1000);
+}
+
+// TRACK BUS MODAL
+function trackBus(id){
+document.getElementById('modalBusId').textContent='#'+id;
+document.getElementById('modal').classList.add('show');
+}
+function closeModal(){
+document.getElementById('modal').classList.remove('show');
+}
+document.getElementById('modal').addEventListener('click',(e)=>{
+if(e.target===document.getElementById('modal'))closeModal();
+});
+
+// TOAST
+function showToast(msg){
+const toast=document.getElementById('toast');
+toast.textContent=msg||'✅ Message sent successfully!';
+toast.classList.add('show');
+setTimeout(()=>toast.classList.remove('show'),3000);
+}
+
+// CONTACT FORM
+const form=document.getElementById('contactForm');
+const emailRegex=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+['name','email','message'].forEach(id=>{
+const input=document.getElementById(id);
+input.addEventListener('input',()=>validateField(input));
+input.addEventListener('blur',()=>validateField(input));
+});
+
+function validateField(input){
+const group=input.closest('.form-group');
+if(input.id==='email'){
+if(emailRegex.test(input.value)){
+group.classList.remove('error');group.classList.add('valid');return true;
+}else if(input.value){
+group.classList.add('error');group.classList.remove('valid');return false;
+}
+}else{
+if(input.value.trim()){
+group.classList.remove('error');group.classList.add('valid');return true;
+}else if(input.value!==undefined){
+group.classList.add('error');group.classList.remove('valid');return false;
+}
+}
+return false;
+}
+
+form.addEventListener('submit',(e)=>{
+e.preventDefault();
+const nameOk=validateField(document.getElementById('name'));
+const emailOk=validateField(document.getElementById('email'));
+const msgOk=validateField(document.getElementById('message'));
+
+if(nameOk&&emailOk&&msgOk){
+const btn=form.querySelector('.submit-btn');
+btn.classList.add('loading');
+setTimeout(()=>{
+btn.classList.remove('loading');
+showToast('✅ Message sent successfully!');
+form.reset();
+document.querySelectorAll('.form-group').forEach(g=>{
+g.classList.remove('valid','error');
+});
+},1500);
+}else{
+['name','email','message'].forEach(id=>{
+const input=document.getElementById(id);
+if(!input.value.trim())input.closest('.form-group').classList.add('error');
+});
+}
+});
+
+// SMOOTH SCROLL
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+a.addEventListener('click',(e)=>{
+const target=document.querySelector(a.getAttribute('href'));
+if(target){
+e.preventDefault();
+target.scrollIntoView({behavior:'smooth',block:'start'});
+}
+});
+});
+
+// BUS MARKER MOVEMENT
+const markers=document.querySelectorAll('.bus-marker');
+markers.forEach(m=>{
+const origTop=parseFloat(m.style.top);
+const origLeft=parseFloat(m.style.left);
+function drift(){
+const newTop=origTop+(Math.random()-0.5)*4;
+const newLeft=origLeft+(Math.random()-0.5)*4;
+m.style.top=Math.max(5,Math.min(85,newTop))+'%';
+m.style.left=Math.max(5,Math.min(90,newLeft))+'%';
+}
+setInterval(drift,3000+Math.random()*2000);
+});
+</script>
+</body>
+</html>
